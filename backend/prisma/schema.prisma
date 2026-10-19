@@ -1,0 +1,100 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  phone     String?
+  role      String   @default("CITIZEN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  complaints         Complaint[] @relation("CitizenComplaints")
+  assignedComplaints Complaint[] @relation("OfficerComplaints")
+  notifications      Notification[]
+}
+
+model Complaint {
+  id          String  @id @default(uuid())
+  complaintId String  @unique
+  citizenId   String?
+  officerId   String?
+
+  citizen         User? @relation("CitizenComplaints", fields: [citizenId], references: [id])
+  assignedOfficer User? @relation("OfficerComplaints", fields: [officerId], references: [id])
+
+  leakType     String
+  leakCategory String
+  severity     String
+  priority     String  @default("LOW")
+  description  String
+
+  latitude  Float
+  longitude Float
+  address   String
+  area      String?
+  city      String?
+  pincode   String?
+
+  status      String  @default("SUBMITTED")
+  isAnonymous Boolean @default(false)
+  isEmergency Boolean @default(false)
+
+  estimatedWaterLoss Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  media         Media[]
+  statusHistory StatusHistory[]
+  feedback      Feedback?
+}
+
+model Media {
+  id          String    @id @default(uuid())
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id])
+  type        String
+  url         String
+  createdAt   DateTime  @default(now())
+}
+
+model StatusHistory {
+  id          String    @id @default(uuid())
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id])
+  status      String
+  notes       String?
+  createdAt   DateTime  @default(now())
+}
+
+model Feedback {
+  id             String    @id @default(uuid())
+  complaintId    String    @unique
+  complaint      Complaint @relation(fields: [complaintId], references: [id])
+  rating         Int
+  isRepaired     Boolean
+  isSatisfactory Boolean
+  comments       String?
+  createdAt      DateTime  @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
